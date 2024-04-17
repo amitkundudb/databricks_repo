@@ -4,8 +4,8 @@ from pyspark.sql.functions import current_date, udf , col , sum , count , avg
 
 # COMMAND ----------
 
-def read_custom_schema(path,schema):
-    return spark.read.format("csv").options(header = True, schema = schema).load(path)
+def read_custom_schema(path):
+    return spark.read.format("csv").options(header = True, inferSchema = True).load(path)
 
 # COMMAND ----------
 
@@ -19,10 +19,6 @@ def camel_to_snake(df):
     for cols in df.columns:
         df = df.withColumnRenamed(cols , cols.lower())
     return df
-
-# COMMAND ----------
-
-udf(camel_to_snake)
 
 # COMMAND ----------
 

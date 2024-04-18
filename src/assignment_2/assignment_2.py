@@ -12,7 +12,6 @@ from pyspark.sql.functions import explode, split, current_date
 
 response_data = requests.get('https://reqres.in/api/users?page=2')
 json_data = response_data.json()
-display(json_data)
 
 # COMMAND ----------
 
@@ -37,40 +36,26 @@ custom_schema = StructType([
 # COMMAND ----------
 
 df = spark.createDataFrame([json_data], custom_schema)
-display(df)
 
 # COMMAND ----------
 
 df = df.drop('page', 'per_page', 'total', 'total_pages', 'support')
-display(df)
-
-# COMMAND ----------
-
-df.printSchema()
 
 # COMMAND ----------
 
 df = df.withColumn('data', explode('data'))
-display(df)
-
-# COMMAND ----------
-
-df.printSchema()
 
 # COMMAND ----------
 
 df = df.withColumn("id", df.data.id).withColumn('email', df.data.email).withColumn('first_name', df.data.first_name).withColumn('last_name', df.data.last_name).withColumn('aatar', df.data.avatar).drop(df.data)
-display(df)
 
 # COMMAND ----------
 
 derived_site_address_df = df.withColumn("site_address",split(df["email"],"@")[1])
-display(derived_site_address_df)
 
 # COMMAND ----------
 
 loaded_date = derived_site_address_df.withColumn('load_date', current_date())
-display(loaded_date)
 
 # COMMAND ----------
 
@@ -79,4 +64,3 @@ loaded_date.write.format('delta').mode('overwrite').save('dbfs:/FileStore/assign
 # COMMAND ----------
 
 testing_df = spark.read.format('delta').load('dbfs:/FileStore/assignments/question2/site_info/person_info')
-display(testing_df)

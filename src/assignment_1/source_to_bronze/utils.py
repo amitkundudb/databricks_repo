@@ -4,8 +4,8 @@ from pyspark.sql.functions import current_date, udf , col , sum , count , avg
 
 # COMMAND ----------
 
-def read_custom_schema(path):
-    return spark.read.format("csv").options(header = True, inferSchema = True).load(path)
+def read_custom_schema(path,schema):
+    return spark.read.format("csv").options(header = True, schema = schema).load(path)
 
 # COMMAND ----------
 

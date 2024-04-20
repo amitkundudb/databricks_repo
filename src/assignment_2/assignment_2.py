@@ -1,66 +1,34 @@
 # Databricks notebook source
-pip install requests
-
-# COMMAND ----------
-
 import requests
 import json
 from pyspark.sql.types import *
 from pyspark.sql.functions import explode, split, current_date
 
-# COMMAND ----------
+def create_df(json_data,custom_schema):
+    raw_df = spark.createDataFrame(json_data,schema = custom_schema)
+    return raw_df
 
-response_data = requests.get('https://reqres.in/api/users?page=2')
-json_data = response_data.json()
+def col_drop(raw_df):
+    df = raw_df.drop('page', 'per_page', 'total', 'total_pages', 'support')
+    return df
 
-# COMMAND ----------
+def flatten(df):
+    flatten_df = df.withColumn('data', explode('data'))
+    return flatten_df
 
-data_schema = StructType([
-    StructField("id", IntegerType(), True),
-    StructField("email", StringType(), True),
-    StructField("first_name", StringType(), True),
-    StructField("last_name", StringType(), True),
-    StructField("avatar", StringType(), True)
-])
+def new_col(flatten_df):
+    newcol_df = flatten_df.withColumn("id", flatten_df.data.id).withColumn('email', flatten_df.data.email).withColumn('first_name', flatten_df.data.first_name).withColumn('last_name', flatten_df.data.last_name).withColumn('aatar', flatten_df.data.avatar).drop(flatten_df.data)
+    return new_coldf
 
-custom_schema = StructType([
-    StructField("page", IntegerType(), True),
-    StructField("per_page", IntegerType(), True),
-    StructField("total", IntegerType(), True),
-    StructField("total_pages", IntegerType(), True),
-    StructField("data", ArrayType(data_schema), True),
-    StructField("support", MapType(StringType(), StringType()), True)
-])
+def derived_df(new_coldf):
+    derived_site_address_df = new_coldf.withColumn("site_address",split(new_coldf["email"],"@")[1])
+    return derived_site_address_df
 
+def load_date(derived_site_address_df):
+    loaded_date = derived_site_address_df.withColumn('load_date', current_date())
+    return loaded_date
 
-# COMMAND ----------
-
-df = spark.createDataFrame([json_data], custom_schema)
-
-# COMMAND ----------
-
-df = df.drop('page', 'per_page', 'total', 'total_pages', 'support')
-
-# COMMAND ----------
-
-df = df.withColumn('data', explode('data'))
-
-# COMMAND ----------
-
-df = df.withColumn("id", df.data.id).withColumn('email', df.data.email).withColumn('first_name', df.data.first_name).withColumn('last_name', df.data.last_name).withColumn('aatar', df.data.avatar).drop(df.data)
-
-# COMMAND ----------
-
-derived_site_address_df = df.withColumn("site_address",split(df["email"],"@")[1])
-
-# COMMAND ----------
-
-loaded_date = derived_site_address_df.withColumn('load_date', current_date())
-
-# COMMAND ----------
-
-loaded_date.write.format('delta').mode('overwrite').save('dbfs:/FileStore/assignments/question2/site_info/person_info')
-
-# COMMAND ----------
-
-testing_df = spark.read.format('delta').load('dbfs:/FileStore/assignments/question2/site_info/person_info')
+def testing(path):
+    loaded_date.write.format('delta').mode('overwrite').save(path)
+    testing_df = spark.read.format('delta').load(path)
+    return testing_df

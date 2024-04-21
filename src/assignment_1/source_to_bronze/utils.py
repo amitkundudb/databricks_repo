@@ -1,10 +1,11 @@
 # Databricks notebook source
-from pyspark.sql.functions import current_date, udf , col , sum , count , avg
-
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import current_date, col, sum, avg
+spark = SparkSession.builder.appName("TestSparkFunctions").getOrCreate()
 
 # COMMAND ----------
 
-def read_custom_schema(path,schema):
+def read_custom_schema(spark,path,schema):
     return spark.read.format("csv").options(header = True, schema = schema).load(path)
 
 # COMMAND ----------
@@ -16,9 +17,8 @@ def write_csv( df , path):
 # COMMAND ----------
 
 def camel_to_snake(df):
-    for cols in df.columns:
-        df = df.withColumnRenamed(cols , cols.lower())
-    return df
+    snake_case_columns = [col(col_name).alias(col_name.lower()) for col_name in df.columns]
+    return df.select(*snake_case_columns)
 
 # COMMAND ----------
 
@@ -36,13 +36,13 @@ def salary_of_each_department(df):
 # COMMAND ----------
 
 def employee_count(df):
-    employees_count = df.groupBy("department", "country").count()
+    employees_count = df.groupBy("EmployeeID").count()
     return employees_count
 
 # COMMAND ----------
 
 def list_the_department(df):
-    dept_and_country = df.select("department", "country").distinct()
+    dept_and_country = df.select("department").distinct()
     return dept_and_country
 
 # COMMAND ----------

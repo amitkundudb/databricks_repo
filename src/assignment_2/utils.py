@@ -1,8 +1,7 @@
 # Databricks notebook source
-import requests
-import json
-from pyspark.sql.types import *
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode, split, current_date
+spark = SparkSession.builder.appName("TestSparkFunctions").getOrCreate()
 
 def create_df(json_data,custom_schema):
     raw_df = spark.createDataFrame(json_data,schema = custom_schema)
@@ -18,7 +17,7 @@ def flatten(df):
 
 def new_col(flatten_df):
     newcol_df = flatten_df.withColumn("id", flatten_df.data.id).withColumn('email', flatten_df.data.email).withColumn('first_name', flatten_df.data.first_name).withColumn('last_name', flatten_df.data.last_name).withColumn('aatar', flatten_df.data.avatar).drop(flatten_df.data)
-    return new_coldf
+    return newcol_df
 
 def derived_df(new_coldf):
     derived_site_address_df = new_coldf.withColumn("site_address",split(new_coldf["email"],"@")[1])
